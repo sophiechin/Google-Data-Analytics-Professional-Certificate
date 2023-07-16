@@ -58,70 +58,102 @@ This step will address the data source that will be used for the analysis and th
 
 #### Data Combination
 
-To help with data combination, the following SQL query is implemented in order to combine all 12 files into a single dataset:
+Tables representing 12 CSV files have been uploaded to the 2022_tripdata dataset. To help with data combination, the following SQL query is implemented in order to combine all 12 files into a single dataset. A new table named "combined_data" has been generated using the following code.:
 
 ```
-DROP TABLE IF EXISTS `2022_tripdata_combined`;
-
-CREATE TABLE IF NOT EXISTS `2022_tripdata_combined` AS 
+CREATE TABLE IF NOT EXISTS `2022_tripdata.all_tripdata` AS 
 (
-  SELECT * FROM `2022_tripdata_202201_tripdata`
+  SELECT * FROM '202201_tripdata`
   UNION ALL
-  SELECT * FROM `2022_tripdata_202202_tripdata`
+  SELECT * FROM `202202_tripdata`
   UNION ALL
-  SELECT * FROM `2022_tripdata_202203_tripdata`
+  SELECT * FROM `202203_tripdata`
   UNION ALL
-  SELECT * FROM `2022_tripdata_202204_tripdata`
+  SELECT * FROM `202204_tripdata`
   UNION ALL
-  SELECT * FROM `2022_tripdata_202205_tripdata`
+  SELECT * FROM `202205_tripdata`
   UNION ALL
-  SELECT * FROM `2022_tripdata_202206_tripdata`
+  SELECT * FROM `202206_tripdata`
   UNION ALL
-  SELECT * FROM `2022_tripdata_202207_tripdata`
+  SELECT * FROM `202207_tripdata`
   UNION ALL
-  SELECT * FROM `2022_tripdata_202208_tripdata`
+  SELECT * FROM `202208_tripdata`
   UNION ALL
-  SELECT * FROM `2022_tripdata_202209_tripdata`
+  SELECT * FROM `202209_tripdata`
   UNION ALL
-  SELECT * FROM `2022_tripdata_202210_tripdata`
+  SELECT * FROM `202210_tripdata`
   UNION ALL
-  SELECT * FROM `2022_tripdata_202211_tripdata`
+  SELECT * FROM `202211_tripdata`
   UNION ALL
-  SELECT * FROM `2022_tripdata_202212_tripdata`
+  SELECT * FROM `202212_tripdata`
 );
-
 ```
 
-Then, check the row numbers:
+Then, to check the total row numbers, we perform this SQL query. The new dataset "all_tripdata" holds a total of 5,667,717 data rows encompassing the entire year:
 
 ```
-SELECT COUNT(*)
-FROM `2022_tripdata_combined`;
+SELECT COUNT(*) AS total_records
+FROM `2022_tripdata.all_tripdata`;
+```
+We perform the following code to show the first 10 rows of the dataset in order to understand the dataset better
 
 ```
-
+SELECT * `FROM 2022_tripdata.all_tripdata` LIMIT 10;
+```
 ### Data Exploration
 
-In order to do data exploration, the first thing to do is to check the data type to observe the inconsistencies:
+In order to do data exploration, the first thing to do is to check the data type to observe the inconsistencies. After checking, we have seen that the entire dataset has the ride_id as the primary key:
 
 ```
 SELECT column_name, data_type
 FROM `2022_tripdata`.INFORMATION_SCHEMA.COLUMNS
-WHERE table_name = 'combined_data';
+WHERE table_name = 'all_tripdata';
+
+```
+To help ensure data cleanness, we have to check if the dataset has any null values in any column. However, it appears that there are no ***null*** values in the dataset:
+
+```
+SELECT COUNT(*) - COUNT(ride_id) ride_id,
+ COUNT(*) - COUNT(rideable_type) rideable_type,
+ COUNT(*) - COUNT(started_at) started_at,
+ COUNT(*) - COUNT(ended_at) ended_at,
+ COUNT(*) - COUNT(start_station_name) start_station_name,
+ COUNT(*) - COUNT(start_station_id) start_station_id,
+ COUNT(*) - COUNT(end_station_name) end_station_name,
+ COUNT(*) - COUNT(end_station_id) end_station_id,
+ COUNT(*) - COUNT(start_lat) start_lat,
+ COUNT(*) - COUNT(start_lng) start_lng,
+ COUNT(*) - COUNT(end_lat) end_lat,
+ COUNT(*) - COUNT(end_lng) end_lng,
+ COUNT(*) - COUNT(member_casual) member_casual
+FROM `2022_tripdata.all_tripdata`;
 ```
 
+After checking the null values, we also need to check if the dataset has any duplicate values. By performing this following code, it appears that we have no duplicate values:
 
+```
+SELECT COUNT(ride_id) - COUNT(DISTINCT ride_id) AS duplicate_rows
+FROM `2022_tripdata.all_tripdata`;
 
+```
 
+Retrieve the records of the rideable_type column to see the different bike types: electric_bike, classical_bike, docked_bike
 
+```
+SELECT DISTINCT rideable_type, COUNT(rideable_type) AS trip_type
+FROM `2022_tripdata.combined_data`
+GROUP BY rideable_type;
+```
 
+The started_at and ended_at shows start and end time of the trip in YYYY-MM-DD hh:mm:ss UTC format. New column ride_length can be created to find the total trip duration. There are 5360 trips which has duration longer than a day and 122283 trips having less than a minute duration or having end time earlier than start time so need to remove them. Other columns day_of_week and month can also be helpful in analysis of trips at different times in a year.
 
+Total of 833064 rows have both start_station_name and start_station_id missing which needs to be removed.
 
+Total of 892742 rows have both end_station_name and end_station_id missing which needs to be removed.
 
+Total of 5858 rows have both end_lat and end_lng missing which needs to be removed.
 
-
-
-
+member_casual column has 2 uniqued values as member or casual rider.
 
 
 
