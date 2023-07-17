@@ -37,7 +37,7 @@ This step will address the data source that will be used for the analysis and th
 
 **Data Source**:  Cyclistic’s historical trip data from Jan 2022 to Dec 2022 which is a public dataset published by Motivate International Inc. will be used to analyze and identify trends. [Click Here](https://divvy-tripdata.s3.amazonaws.com/index.html) for the dataset.
 
-**Data Information**: In the data source, there are 12 files in total following the naming convention of "YYYYMM-divvy-tripdata". Each file contains data for a specific month, including other details such as ride ID, bike type, start time, end time, start station, end station, start location, end location, and member status. The corresponding column names are:
+**Data Information**: In the data source, there are 12 files in total following the naming convention of *"YYYYMM-divvy-tripdata"*. Each file contains data for a specific month, including other details such as ride ID, bike type, start time, end time, start station, end station, start location, end location, and member status. The corresponding column names are:
 - ride_id
 - rideable_type
 - started_at
@@ -58,7 +58,7 @@ This step will address the data source that will be used for the analysis and th
 
 #### Data Combination
 
-Tables representing 12 CSV files have been uploaded to the 2022_tripdata dataset. To help with data combination, the following SQL query is implemented in order to combine all 12 files into a single dataset. A new table named "combined_data" has been generated using the following code.:
+Tables representing 12 CSV files have been uploaded to the 2022_tripdata dataset. To help with data combination, the following SQL query is implemented in order to combine all 12 files into a single dataset. A new table named ***"all_tripdata"*** has been generated using the following code.:
 
 ```
 CREATE TABLE IF NOT EXISTS `2022_tripdata.all_tripdata` AS 
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS `2022_tripdata.all_tripdata` AS
 );
 ```
 
-Then, to check the total row numbers, we perform this SQL query. The new dataset "all_tripdata" holds a total of 5,667,717 data rows encompassing the entire year:
+Then, to check the total row numbers, we perform this SQL query. The new dataset ***"all_tripdata"*** holds a total of 5,667,717 data rows encompassing the entire year:
 
 ```
 SELECT COUNT(*) AS total_records
@@ -100,7 +100,7 @@ We perform the following code to show the first 10 rows of the dataset in order 
 ```
 SELECT * `FROM 2022_tripdata.all_tripdata` LIMIT 10;
 ```
-### Data Exploration
+#### Data Exploration
 
 In order to do data exploration, the first thing to do is to check the data type to observe the inconsistencies. After checking, we have seen that the entire dataset has the ride_id as the primary key:
 
@@ -144,7 +144,18 @@ SELECT DISTINCT rideable_type, COUNT(rideable_type) AS trip_type
 FROM `2022_tripdata.combined_data`
 GROUP BY rideable_type;
 ```
+Retrieve the records of the member_casual column to check the different member types: member, casual
 
+```
+SELECT DISTINCT member_casual, COUNT(*) AS count_member_type
+FROM your_dataset_name.your_table_name
+GROUP BY member_casual;
+```
+The trip starts and end times are indicated in the format YYYY-MM-DD hh:mm:ss UTC in the columns *"started_at"* and *"ended_at."* By introducing a new column called ***"ride_length"*** we can compute the total trip duration. It is necessary to exclude 5360 trips with a duration exceeding one day and 122283 trips with a duration less than a minute or end times earlier than start times.
+
+Columns such as ***"day_of_week"*** and ***"month"*** can offer valuable insights into analyzing trips at various times throughout the year.
+
+To enhance data integrity, 833064 rows with missing values in both "start_station_name" and "start_station_id" should be eliminated. Similarly, 892742 rows with missing values in both ***"end_station_name"*** and ***"end_station_id"*** and 5858 rows with missing values in both ***"end_lat"*** and ***"end_lng"*** should also be removed.
 
 ```
 SELECT started_at, ended_at
@@ -165,6 +176,107 @@ WHERE (
   EXTRACT(MINUTE FROM (ended_at - started_at)) +
   EXTRACT(SECOND FROM (ended_at - started_at)) / 60) <= 1;      -- less than 1 minute - total rows = 122283
 ```
+
+In the dataset, there are 833,064 rows where both the ***"start_station_name"*** and ***"start_station_id"*** values are missing.
+
+```
+SELECT DISTINCT start_station_name
+FROM `2022_tripdata.all_tripdata`
+ORDER BY start_station_name;
+
+SELECT COUNT(ride_id) AS start_station_null   
+FROM `2022_tripdata.all_tripdata`
+WHERE start_station_name IS NULL OR start_station_id IS NULL;
+
+```
+
+There are also 892,742 rows in which both the ***"end_station_name"*** and ***"end_station_id"*** values are absent.
+
+```
+SELECT DISTINCT end_station_name
+FROM `2022_tripdata.all_tripdata`
+ORDER BY end_station_name;
+
+SELECT COUNT(ride_id) AS end_station_null
+FROM `2022_tripdata.all_tripdata`
+WHERE end_station_name IS NULL OR end_station_id IS NULL;
+
+```
+In the dataset, there are a total of 5,858 rows where both the ***"end_lat"*** and ***"end_lng"*** values are missing.
+```
+SELECT COUNT(ride_id) AS end_loc_null
+FROM `2022_tripdata.all_tripdata`
+WHERE end_lat IS NULL OR end_lng IS NULL;
+```
+#### Data Cleaning
+
+In step, a new table will be created for cleaned data which is easier for analysis. Therefore, the following steps are implemented:
+
+ - First, any rows containing missing values are removed from the dataset.
+ - 3 new columns, namely ***"ride_length"*** to indicate the trip duration, ***"day_of_week"*** to specify the day of the week, and ***"month"*** to represent the month, are added.
+ - Trips with durations less than a minute and longer than a day are excluded, leading to the removal of a total of 1,375,912 rows during this process.
+
+
+Create a new table called ***"alldata_cleaned"*** with the following code:
+```
+CREATE TABLE IF NOT EXISTS `2022_tripdata.alldata_cleaned` AS (
+  SELECT 
+    a.ride_id, rideable_type, started_at, ended_at, 
+    ride_length,
+    CASE EXTRACT(DAYOFWEEK FROM started_at) 
+      WHEN 1 THEN 'Sun'
+      WHEN 2 THEN 'Mon'
+      WHEN 3 THEN 'Tue'
+      WHEN 4 THEN 'Wed'
+      WHEN 5 THEN 'Thu'
+      WHEN 6 THEN 'Fri'
+      WHEN 7 THEN 'Sat'    
+    END AS day_of_week,
+    CASE EXTRACT(MONTH FROM started_at)
+      WHEN 1 THEN 'Jan'
+      WHEN 2 THEN 'Feb'
+      WHEN 3 THEN 'Mar'
+      WHEN 4 THEN 'Apr'
+      WHEN 5 THEN 'May'
+      WHEN 6 THEN 'Jun'
+      WHEN 7 THEN 'Jul'
+      WHEN 8 THEN 'Aug'
+      WHEN 9 THEN 'Sep'
+      WHEN 10 THEN 'Oct'
+      WHEN 11 THEN 'Nov'
+      WHEN 12 THEN 'Dec'
+    END AS month,
+    start_station_name, end_station_name, 
+    start_lat, start_lng, end_lat, end_lng, member_casual
+  FROM `2022_tripdata.all_tripdata` a
+  JOIN (
+    SELECT ride_id, (
+      EXTRACT(HOUR FROM (ended_at - started_at)) * 60 +
+      EXTRACT(MINUTE FROM (ended_at - started_at)) +
+      EXTRACT(SECOND FROM (ended_at - started_at)) / 60) AS ride_length
+    FROM `2022_tripdata.all_tripdata`
+  ) b 
+  ON a.ride_id = b.ride_id
+  WHERE 
+    start_station_name IS NOT NULL AND
+    end_station_name IS NOT NULL AND
+    end_lat IS NOT NULL AND
+    end_lng IS NOT NULL AND
+    ride_length > 1 AND ride_length < 1440
+);
+```
+
+Set ***"ride_id"*** as the primary key for the new table and remove rows:
+
+```
+ALTER TABLE `2022_tripdata.alldata_cleaned`
+ADD PRIMARY KEY(ride_id) NOT ENFORCED;
+
+SELECT COUNT(ride_id) AS no_of_rows
+FROM `2022_tripdata.alldata_cleaned`;
+```
+
+#### Data Analysis
 
 
 
