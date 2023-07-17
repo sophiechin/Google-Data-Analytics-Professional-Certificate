@@ -145,17 +145,26 @@ FROM `2022_tripdata.combined_data`
 GROUP BY rideable_type;
 ```
 
-The started_at and ended_at shows start and end time of the trip in YYYY-MM-DD hh:mm:ss UTC format. New column ride_length can be created to find the total trip duration. There are 5360 trips which has duration longer than a day and 122283 trips having less than a minute duration or having end time earlier than start time so need to remove them. Other columns day_of_week and month can also be helpful in analysis of trips at different times in a year.
 
-Total of 833064 rows have both start_station_name and start_station_id missing which needs to be removed.
+```
+SELECT started_at, ended_at
+FROM `2022_tripdata.all_tripdata`
+LIMIT 20;
 
-Total of 892742 rows have both end_station_name and end_station_id missing which needs to be removed.
+SELECT COUNT(*) AS longer_than_1_day
+FROM `2022_tripdata.all_tripdata`
+WHERE (
+  EXTRACT(HOUR FROM (ended_at - started_at)) * 60 +
+  EXTRACT(MINUTE FROM (ended_at - started_at)) +
+  EXTRACT(SECOND FROM (ended_at - started_at)) / 60) >= 1440;   -- longer than 1 day - total rows = 5360
 
-Total of 5858 rows have both end_lat and end_lng missing which needs to be removed.
-
-member_casual column has 2 uniqued values as member or casual rider.
-
-
+SELECT COUNT(*) AS less_than_a_minute
+FROM `2022_tripdata.all_tripdata`
+WHERE (
+  EXTRACT(HOUR FROM (ended_at - started_at)) * 60 +
+  EXTRACT(MINUTE FROM (ended_at - started_at)) +
+  EXTRACT(SECOND FROM (ended_at - started_at)) / 60) <= 1;      -- less than 1 minute - total rows = 122283
+```
 
 
 
