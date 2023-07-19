@@ -278,6 +278,7 @@ FROM `2022_tripdata.alldata_cleaned`;
 
 #### Data Analysis
 
+In this Data Analysis Process
 
 
 
