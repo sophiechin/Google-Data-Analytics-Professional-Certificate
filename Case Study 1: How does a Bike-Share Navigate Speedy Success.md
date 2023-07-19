@@ -280,6 +280,7 @@ FROM `2022_tripdata.alldata_cleaned`;
 
 In this Data Analysis Process
 
+![Example Image](Data Visualization/Ride Duration.png)
 
 
 
