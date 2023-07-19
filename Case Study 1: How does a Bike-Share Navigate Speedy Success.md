@@ -276,11 +276,17 @@ SELECT COUNT(ride_id) AS no_of_rows
 FROM `2022_tripdata.alldata_cleaned`;
 ```
 
-#### Data Analysis
+#### Data Analysis & Visualization
 
-In this Data Analysis Process
+The data has been meticulously stored and prepared for thorough analysis. Relevant information was extracted from multiple tables and then effectively visualized using **Tableau**. The primary objective of this analysis is *to understand the distinct usage patterns of Cyclistic bikes between annual members and casual riders.*
 
-![Example Image](Data Visualization/Ride Duration.png)
+To initiate this comparison, we carefully examine and compare the specific types of bikes that each group, comprising annual members and casual riders, frequently utilizes.
+
+![TotalBikeType](Data%20Visualization/Total%20Bike%20Types.png)
+
+The composition of Cyclistic users can be divided into two major categories: members, accounting for approximately 59.7% of the total, and casual riders, comprising the remaining 40.3%. The percentage distribution for each bike type reveals that the classic bike is the most popular among both member and casual rider groups, with the electric bike ranking second in popularity. Interestingly, docked bikes are predominantly used by casual riders and represent the least utilized bike type within the Cyclistic service.
+
+Moving on, we delve into the analysis of trip distributions based on different time parameters. Specifically, we explore the number of trips distributed across months, days of the week, and hours of the day.
 
 
 
